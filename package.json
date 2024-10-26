@@ -1,0 +1,18 @@
+{
+  "name": "tpo-db2-node",
+  "version": "1.0.0",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "mongoose": "^8.7.3",
+    "neo4j-driver": "^5.26.0",
+    "readline-sync": "^1.4.10"
+  }
+}
