@@ -5,4 +5,4 @@ Version Node 22.5.1
 3) levantar servidor neo4j local
 
 Planteo de solucion
-https://excalidraw.com/#json=zleHlDAAqad53DaUHY-Rj,WJpH4wjCNXqhka2qDerfxg
+[https://excalidraw.com/#json=zleHlDAAqad53DaUHY-Rj,WJpH4wjCNXqhka2qDerfxg](https://excalidraw.com/#json=8TyNVo1-HER3HmefEOqcq,Ci_elMovPtOeuISnz3ErRA)
