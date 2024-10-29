@@ -1,0 +1,5 @@
+# Dependency directories
+node_modules/
+
+# Ignorar configuración de pre-commit
+.pre-commit-config.yaml
