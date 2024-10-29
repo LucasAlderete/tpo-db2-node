@@ -1,5 +1,6 @@
 import readlineSync from 'readline-sync';
-import { agregarHotel } from './services/hotelService.js';
+import { agregarHotel, obtenerHotel } from './services/hotelService.js';
+import { capitalize } from './utils/mayus.js';
 import { mongoConnection } from './config/db.js';
 
 async function main() {
@@ -9,7 +10,8 @@ async function main() {
       console.log("1. Agregar Hotel (a mongo y neo)");
       console.log("2. Agregar Habitacion");
       console.log("3. Agregar POI");
-      console.log("0. Salir");
+      console.log("4. Buscar información de un hotel");
+      console.log("5. Salir");
       const opcion = readlineSync.question("Selecciona una opción: ");
   
       switch (opcion) {
@@ -23,6 +25,9 @@ async function main() {
             pending();
           break;
         case "4":
+          await buscarHotel();
+          break;
+        case "5":
           salir = true;
           break;
         default:
@@ -53,7 +58,31 @@ async function nuevoHotel() {
     const hotel = await agregarHotel(hotelData);
     
     console.log("Hotel agregado exitosamente");
+}
+
+async function buscarHotel() {
+  const nombreHotel = readlineSync.question("Indique el nombre del hotel: ")
+
+  const hotel = await obtenerHotel(nombreHotel);
+  if(!hotel) {
+    console.log(`\n=== No se encontra registrado un hotel con nombre ${nombreHotel} ===`);
+    return;
   }
+
+  const camposParaMostrar = ["nombre", "direccion", "telefono", "email"];
+
+  const hotelObj = hotel.toObject();
+  const hotelPropiedades = Object.keys(hotelObj);
+
+  console.log(`\n=== Hotel ${nombreHotel} encontrado!===`);
+  console.log("=== Información: ===");
+
+  hotelPropiedades.forEach(propiedad => {
+    if (camposParaMostrar.includes(propiedad)) {
+      console.log(`${capitalize(propiedad)}: ${hotelObj[propiedad]}`);
+    }
+});
+}
   
 function pending(){
     console.log("Pendiente");

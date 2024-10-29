@@ -22,3 +22,14 @@ export async function agregarHotel(data) {
   }
   
 }
+
+export async function obtenerHotel(nombre) {
+  
+  try {
+    const hotel = await Hotel.findOne({nombre});
+    return hotel;
+
+  } catch (err) {
+    console.error("Error al buscar Hotel:", err);
+  }
+}
