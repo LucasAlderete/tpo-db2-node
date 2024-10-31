@@ -53,6 +53,14 @@ async function nuevoHotel() {
     await mongoConnection;
   
     const nombre = readlineSync.question("Nombre del hotel: ");
+
+    const exists = (await obtenerHotel(nombre)) != null;
+
+    if (exists) {
+        console.log("Ya existe un hotel con ese nombre.")
+        await nuevoHotel();
+    }
+
     const direccion = readlineSync.question("Dirección: ");
     const telefono = readlineSync.question("Teléfono: ").split(",");
     const email = readlineSync.question("Email: ");
@@ -60,8 +68,6 @@ async function nuevoHotel() {
     const hotelData = { nombre, direccion, telefono, email, puntosInteres };
   
     const hotel = await agregarHotel(hotelData);
-    
-    console.log("Hotel agregado exitosamente");
 }
 
 async function buscarHotel() {
