@@ -3,3 +3,4 @@ node_modules/
 
 # Ignorar configuración de pre-commit
 .pre-commit-config.yaml
+.DS_Store
