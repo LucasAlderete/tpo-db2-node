@@ -1,5 +1,5 @@
 import readlineSync from 'readline-sync';
-import { agregarHotel, obtenerHotel } from './services/hotelService.js';
+import { agregarHotel, obtenerHotel, obtenerPoiPorHotel } from './services/hotelService.js';
 import { capitalize } from './utils/mayus.js';
 import { mongoConnection } from './config/db.js';
 
@@ -11,7 +11,8 @@ async function main() {
       console.log("2. Agregar Habitacion");
       console.log("3. Agregar POI");
       console.log("4. Buscar información de un hotel");
-      console.log("5. Salir");
+      console.log("5. Buscar puntos de interés cercanos a un hotel");
+      console.log("6. Salir");
       const opcion = readlineSync.question("Selecciona una opción: ");
   
       switch (opcion) {
@@ -28,7 +29,10 @@ async function main() {
           await buscarHotel();
           break;
         case "5":
-          salir = true;
+          await buscarPoiPorHotel();
+          break;
+        case "6":
+          pending();
           break;
         default:
           console.log("Opción no válida. Inténtalo de nuevo.");
@@ -81,7 +85,21 @@ async function buscarHotel() {
     if (camposParaMostrar.includes(propiedad)) {
       console.log(`${capitalize(propiedad)}: ${hotelObj[propiedad]}`);
     }
-});
+  });
+}
+
+async function buscarPoiPorHotel() {
+  const nombreHotel = readlineSync.question("Indique el nombre del hotel: ")
+  const poiCernanos = await obtenerPoiPorHotel(nombreHotel);
+  if(poiCernanos.length === 0) {
+    console.log(`\n=== No se encontraron puntos de interés cercanos al hotel ${nombreHotel} ===`);
+    return;
+  }
+
+  console.log(`\n=== Puntos de interés cercanos al hotel ${nombreHotel} ===`);
+  poiCernanos.forEach(poi => {
+    console.log(`- ${poi.nombre}`);
+  });
 }
   
 function pending(){

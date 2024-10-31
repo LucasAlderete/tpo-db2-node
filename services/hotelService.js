@@ -33,3 +33,18 @@ export async function obtenerHotel(nombre) {
     console.error("Error al buscar Hotel:", err);
   }
 }
+
+export async function obtenerPoiPorHotel(nombre) {
+
+  try{
+    const result = await neo4jSession.run(
+      `MATCH (h:Hotel {nombre: $nombre})-[:CERCANO_A]->(p:POI) RETURN p`,
+      { nombre }
+    );
+    return result.records.map(record => record.get(0).properties);
+    
+  } catch (err) {
+    console.error("Error al buscar POIs por Hotel:", err);
+  }
+}
+
