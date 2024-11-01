@@ -67,7 +67,7 @@ async function nuevoHotel() {
     const puntosInteres = readlineSync.question("Puntos de interés (separados por comas): ").split(",");
     const hotelData = { nombre, direccion, telefono, email, puntosInteres };
   
-    const hotel = await agregarHotel(hotelData);
+    await agregarHotel(hotelData);
 }
 
 async function nuevaHabitacion() {
