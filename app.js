@@ -1,5 +1,5 @@
 import readlineSync from 'readline-sync';
-import { agregarHotel, obtenerHotel, obtenerPoiPorHotel } from './services/hotelService.js';
+import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel } from './services/hotelService.js';
 import { capitalize } from './utils/mayus.js';
 import { mongoConnection } from './config/db.js';
 
@@ -20,7 +20,7 @@ async function main() {
           await nuevoHotel();
           break;
         case "2":
-          pending();
+          await nuevaHabitacion();
           break;
         case "3":
             pending();
@@ -64,10 +64,39 @@ async function nuevoHotel() {
     const direccion = readlineSync.question("Dirección: ");
     const telefono = readlineSync.question("Teléfono: ").split(",");
     const email = readlineSync.question("Email: ");
-    let puntosInteres = readlineSync.question("Puntos de interés (separados por comas): ").split(",");
+    const puntosInteres = readlineSync.question("Puntos de interés (separados por comas): ").split(",");
     const hotelData = { nombre, direccion, telefono, email, puntosInteres };
   
     const hotel = await agregarHotel(hotelData);
+}
+
+async function nuevaHabitacion() {
+    await mongoConnection;
+  
+    const nombreHotel = readlineSync.question("Nombre del hotel: ");
+
+    const hotel = await obtenerHotel(nombreHotel);
+
+    if (!hotel) {
+        console.log("No existe un hotel con ese nombre.")
+        await nuevaHabitacion();
+    }
+
+    const nombre = readlineSync.question("Nombre Habitacion: ");
+    const tipo = readlineSync.question("Tipo: ");
+    const capacidad = readlineSync.question("Capacidad: ");
+    const precio_base = readlineSync.question("Precio Base: ");
+    const amenities = readlineSync.question("Amenities (separados por coma): ").split(",");
+    const habitacionData = { 
+        nombre,
+        tipo,
+        capacidad,
+        precio_base,
+        amenities,
+        hotel
+    };
+  
+    await agregarHabitacion(habitacionData);
 }
 
 async function buscarHotel() {
