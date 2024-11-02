@@ -1,5 +1,7 @@
 import readlineSync from 'readline-sync';
-import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel } from './services/hotelService.js';
+import inquirer from 'inquirer';
+import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo } from './services/hotelService.js';
+import { obtenerTodosPoi } from './services/poiService.js';
 import { capitalize } from './utils/mayus.js';
 import { mongoConnection } from './config/db.js';
 
@@ -9,7 +11,7 @@ async function main() {
       console.log("\n=== Menú ===");
       console.log("1. Agregar Hotel (a mongo y neo)");
       console.log("2. Agregar Habitacion");
-      console.log("3. Agregar POI");
+      console.log("3. Buscar hoteles cerca de un punto de interes");
       console.log("4. Buscar información de un hotel");
       console.log("5. Buscar puntos de interés cercanos a un hotel");
       console.log("6. Salir");
@@ -23,7 +25,7 @@ async function main() {
           await nuevaHabitacion();
           break;
         case "3":
-            pending();
+          await buscarHotelPorPoi();
           break;
         case "4":
           await buscarHotel();
@@ -40,7 +42,6 @@ async function main() {
       }
     }
   
-    // Cerrar conexiones
     mongoose.connection.close();
     await neo4jSession.close();
     await neo4jDriver.close();
@@ -98,6 +99,20 @@ async function nuevaHabitacion() {
   
     await agregarHabitacion(habitacionData);
 }
+async function nuevoPOI() {
+    await mongoConnection;
+  
+    const nombrePoi = readlineSync.question("Nombre del POI: ");
+
+    const poi = await obtenerPoi(nombrePoi);
+
+    if (poi) {
+        console.log(`Ya existe el punto de interes: ${nombreHotel}`);
+        await nuevoPOI();
+    }
+
+    await agregarHabitacion(habitacionData);
+}
 
 async function buscarHotel() {
   const nombreHotel = readlineSync.question("Indique el nombre del hotel: ")
@@ -135,6 +150,32 @@ async function buscarPoiPorHotel() {
   poiCernanos.forEach(poi => {
     console.log(`- ${poi.nombre}`);
   });
+}
+
+async function buscarHotelPorPoi() {
+  const listadoPois = await obtenerTodosPoi();
+
+  const puntosDeInteres = listadoPois.records.map(record => record.get('nombre'));
+
+  const { poiSeleccionado } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'poiSeleccionado',
+      message: 'Selecciona el punto de interés:',
+      choices: puntosDeInteres
+    }
+  ]);
+
+  const hotelesRelacionados = await obtenerHotelCercanoAPoiNeo(poiSeleccionado);
+
+  if (hotelesRelacionados.records.length === 0) {
+    console.log(`No se encontraron hoteles cercanos a '${poiSeleccionado}'.`);
+  } else {
+    console.log(`Hoteles cercanos a '${poiSeleccionado}':`);
+    hotelesRelacionados.records.forEach(record => {
+      console.log(`- ${record.get('nombre')}`);
+    });
+  }
 }
   
 function pending(){

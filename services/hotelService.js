@@ -165,3 +165,17 @@ export async function obtenerPoiPorHotel(nombre) {
   }
 }
 
+export async function obtenerHotelCercanoAPoiNeo(nombrePoi) {
+  try {
+    return await neo4jSession.run(
+      `
+      MATCH (h:Hotel)-[:CERCANO_A]->(p:POI {nombre: $nombrePOI})
+      RETURN h.nombre AS nombre, h.id_ref AS id_ref
+      `,
+      { nombrePOI: nombrePoi }
+    );
+  } catch (err) {
+    console.error("Error al obtenerHotelCercanoAPoiNeo:", err);
+  }
+}
+
