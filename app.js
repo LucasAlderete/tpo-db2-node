@@ -3,7 +3,7 @@ import inquirer from 'inquirer';
 import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
 import { capitalize } from './utils/mayus.js';
-import { mongoConnection } from './config/db.js';
+import { mongoConnection, cerrarConexiones } from './config/db.js';
 
 async function main() {
     let salir = false;
@@ -19,6 +19,9 @@ async function main() {
       const opcion = readlineSync.question("Selecciona una opción: ");
   
       switch (opcion) {
+        case "0":
+          salir = true;
+          break;
         case "1":
           await nuevoHotel();
           break;
@@ -42,10 +45,8 @@ async function main() {
           break;
       }
     }
-  
-    mongoose.connection.close();
-    await neo4jSession.close();
-    await neo4jDriver.close();
+    
+    await cerrarConexiones();
   }
   
 main().catch(console.error);
@@ -181,32 +182,36 @@ async function buscarHotelPorPoi() {
 
 async function seleccionarYEliminarHotel() {
     try {
-      const hoteles = await obtenerTodosLosHoteles();
-  
-      if (hoteles.length == 0) {
-        console.log("No hay hoteles");
-        return;
-      }
-  
-      const opcionesHoteles = hoteles.map(hotel => ({
-        name: hotel.nombre,
-        value: hotel._id.toString() 
-      }));
-  
-      const { hotelSeleccionado } = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'hotelSeleccionado',
-          message: 'Selecciona el hotel que deseas eliminar:',
-          choices: opcionesHoteles
-        }
-      ]);
+      const { hotelSeleccionado } = await seleccionarHotel();
 
       await eliminarHotel(hotelSeleccionado)
   
     } catch (err) {
       console.error("Error al eliminar el hotel:", err);
     }
+}
+
+async function seleccionarHotel() {
+  const hoteles = await obtenerTodosLosHoteles();
+  
+    if (hoteles.length == 0) {
+      console.log("No hay hoteles");
+      return;
+    }
+
+    const opcionesHoteles = hoteles.map(hotel => ({
+      name: hotel.nombre,
+      value: hotel._id.toString() 
+    }));
+
+    return await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'hotelSeleccionado',
+        message: 'Selecciona el hotel que deseas eliminar:',
+        choices: opcionesHoteles
+      }
+    ]);
 }
   
 function pending(){
