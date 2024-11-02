@@ -179,3 +179,28 @@ export async function obtenerHotelCercanoAPoiNeo(nombrePoi) {
   }
 }
 
+export async function obtenerTodosLosHoteles() {
+  return await Hotel.find();
+}
+
+export async function eliminarHotel(idRef) {
+  try {
+    await Hotel.findByIdAndDelete(idRef);
+    console.log("Hotel eliminado de Mongo");
+
+    await neo4jSession.run(
+      `
+      MATCH (h:Hotel {id_ref: $hotelId})
+      DETACH DELETE h
+      `,
+      { hotelId: idRef }
+    );
+
+    console.log("Hotel eliminado de Neo4j");
+  }
+  catch (err) {
+    console.log("Error al intentar eliminar el hotel", e);
+  }
+
+}
+

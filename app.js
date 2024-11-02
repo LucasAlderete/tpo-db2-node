@@ -1,6 +1,6 @@
 import readlineSync from 'readline-sync';
 import inquirer from 'inquirer';
-import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo } from './services/hotelService.js';
+import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
 import { capitalize } from './utils/mayus.js';
 import { mongoConnection } from './config/db.js';
@@ -14,7 +14,8 @@ async function main() {
       console.log("3. Buscar hoteles cerca de un punto de interes");
       console.log("4. Buscar información de un hotel");
       console.log("5. Buscar puntos de interés cercanos a un hotel");
-      console.log("6. Salir");
+      console.log("6. Eliminar Hotel");
+      console.log("0. Salir");
       const opcion = readlineSync.question("Selecciona una opción: ");
   
       switch (opcion) {
@@ -34,7 +35,7 @@ async function main() {
           await buscarPoiPorHotel();
           break;
         case "6":
-          pending();
+          await seleccionarYEliminarHotel();
           break;
         default:
           console.log("Opción no válida. Inténtalo de nuevo.");
@@ -176,6 +177,36 @@ async function buscarHotelPorPoi() {
       console.log(`- ${record.get('nombre')}`);
     });
   }
+}
+
+async function seleccionarYEliminarHotel() {
+    try {
+      const hoteles = await obtenerTodosLosHoteles();
+  
+      if (hoteles.length == 0) {
+        console.log("No hay hoteles");
+        return;
+      }
+  
+      const opcionesHoteles = hoteles.map(hotel => ({
+        name: hotel.nombre,
+        value: hotel._id.toString() 
+      }));
+  
+      const { hotelSeleccionado } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'hotelSeleccionado',
+          message: 'Selecciona el hotel que deseas eliminar:',
+          choices: opcionesHoteles
+        }
+      ]);
+
+      await eliminarHotel(hotelSeleccionado)
+  
+    } catch (err) {
+      console.error("Error al eliminar el hotel:", err);
+    }
 }
   
 function pending(){
