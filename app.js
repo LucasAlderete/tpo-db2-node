@@ -84,15 +84,16 @@ async function nuevoHotel() {
 async function nuevaHabitacion() {
     await mongoConnection;
   
-    const nombreHotel = readlineSync.question("Nombre del hotel: ");
+    const { hotelSeleccionado } = await seleccionarHotel();
 
-    const hotel = await obtenerHotel(nombreHotel);
+    const hotel = await obtenerHotelPorId(hotelSeleccionado);
 
     if (!hotel) {
         console.log("No existe un hotel con ese nombre.")
         await nuevaHabitacion();
     }
 
+    console.log(`Agregando habitacion al hotel "${hotel.nombre}"\n`);
     const nombre = readlineSync.question("Nombre Habitacion: ");
     const tipo = readlineSync.question("Tipo: ");
     const capacidad = readlineSync.question("Capacidad: ");
@@ -243,7 +244,7 @@ async function seleccionarHotel() {
       {
         type: 'list',
         name: 'hotelSeleccionado',
-        message: 'Selecciona el hotel que deseas eliminar:',
+        message: 'Selecciona el hotel:',
         choices: opcionesHoteles
       }
     ]);

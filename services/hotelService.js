@@ -4,7 +4,8 @@ import { Habitacion } from "../models/habitacionModel.js";
 
 export async function agregarHotel(data) {
     try {
-      const hotel = new Hotel(data);
+      let hotel = new Hotel(data);
+      hotel.nombre = hotel.nombre.trim();
       await hotel.save();
       console.log("Hotel guardado en Mongo");
       
