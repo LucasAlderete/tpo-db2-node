@@ -204,3 +204,13 @@ export async function eliminarHotel(idRef) {
 
 }
 
+export async function obtenerHotelPorId(idRef) {
+  try {
+    return await Hotel.findById(idRef)
+    .populate('habitaciones');
+
+  } catch (error) {
+    console.log("error al obtener hotel por _id", err);
+  }
+}
+
