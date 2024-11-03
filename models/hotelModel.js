@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const hotelSchema = new mongoose.Schema({
   nombre: String,
-  direccion: String,
+  direccion: {},
   telefono: [String],
   email: String,
   habitaciones: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Habitacion' }],

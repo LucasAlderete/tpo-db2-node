@@ -5,18 +5,25 @@ import { capitalize } from './utils/mayus.js';
 import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
 import { eliminarHabitacion, obtenerHabitacionPorId } from './services/habitacionService.js';
+import { agregarHuesped } from './services/huespedService.js'
 
 async function main() {
+  await mongoConnection;
+
     let salir = false;
     while (!salir) {
       console.log("\n=== Menú ===");
-      console.log("1. Agregar Hotel (a mongo y neo)");
+      console.log("1. Agregar Hotel");
       console.log("2. Agregar Habitacion");
       console.log("3. Buscar hoteles cerca de un punto de interes");
       console.log("4. Buscar información de un hotel");
       console.log("5. Buscar puntos de interés cercanos a un hotel");
       console.log("6. Eliminar Hotel");
       console.log("7. Eliminar Habitacion");
+      console.log("8. Modificar Hotel");
+      console.log("9. Modificar Habitacion");
+      console.log("10. Agregar Huesped");
+      console.log("11. Agregar Reserva");
       console.log("0. Salir");
       const opcion = readlineSync.question("Selecciona una opción: ");
   
@@ -45,6 +52,18 @@ async function main() {
         case "7":
           await seleccionarHotelYEliminarHabitacion();
           break;
+        case "8":
+          pending(); //Modificar hotel
+          break;
+        case "9":
+          pending(); //Modificar habitacion
+          break;
+        case "10":
+          await nuevoHuesped();
+          break;
+        case "11":
+          await nuevaReserva();
+          break;
         default:
           console.log("Opción no válida. Inténtalo de nuevo.");
           break;
@@ -60,7 +79,6 @@ main().catch(console.error);
 
 // (1)
 async function nuevoHotel() {
-    await mongoConnection;
   
     const nombre = readlineSync.question("Nombre del hotel: ");
 
@@ -82,8 +100,6 @@ async function nuevoHotel() {
 
 // (2)
 async function nuevaHabitacion() {
-    await mongoConnection;
-  
     const { hotelSeleccionado } = await seleccionarHotel();
 
     const hotel = await obtenerHotelPorId(hotelSeleccionado);
@@ -211,22 +227,33 @@ async function seleccionarHotelYEliminarHabitacion() {
   }
 }
 
-//privates
-async function nuevoPOI() {
-  await mongoConnection;
+// (10)
+async function nuevoHuesped() {
+  const nombre = readlineSync.question("Nombre: ");
+  const apellido = readlineSync.question("Apellido: ");
+  const telefonos = readlineSync.question("Teléfonos (separados por comas): ").split(",").map(t => t.trim());
+  const emails = readlineSync.question("Emails (separados por comas): ").split(",").map(e => e.trim());
 
-  const nombrePoi = readlineSync.question("Nombre del POI: ");
+  const calle = readlineSync.question("Calle: ");
+  const numero = readlineSync.question("Número: ");
+  const codigoPostal = readlineSync.question("Código Postal: ");
+  const provincia = readlineSync.question("Provincia: ");
+  const pais = readlineSync.question("País: ");
 
-  const poi = await obtenerPoi(nombrePoi);
+  const direccion = {
+      calle,
+      numero,
+      codigoPostal,
+      provincia,
+      pais
+  };
 
-  if (poi) {
-      console.log(`Ya existe el punto de interes: ${nombreHotel}`);
-      await nuevoPOI();
-  }
+  const huespedData = { nombre, apellido, telefonos, emails, direccion };
 
-  await agregarHabitacion(habitacionData);
+  await agregarHuesped(huespedData);
 }
 
+//privates
 async function seleccionarHotel() {
   const hoteles = await obtenerTodosLosHoteles();
   
@@ -273,7 +300,6 @@ async function seleccionarHabitacion(hotel) {
     ]);
 }
 
-  
 function pending(){
     console.log("Pendiente");
 }
