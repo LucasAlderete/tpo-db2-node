@@ -158,20 +158,16 @@ async function buscarHotelPorPoi() {
 
 // (4)
 async function buscarHotel() {
-  const nombreHotel = readlineSync.question("Indique el nombre del hotel: ")
-
-  const hotel = await obtenerHotel(nombreHotel);
-  if(!hotel) {
-    console.log(`\n=== No se encontra registrado un hotel con nombre ${nombreHotel} ===`);
-    return;
-  }
+  
+  const { hotelSeleccionado } = await seleccionarHotel();
+  const hotel = await obtenerHotelPorId(hotelSeleccionado);
 
   const camposParaMostrar = ["nombre", "direccion", "telefono", "email"];
 
   const hotelObj = hotel.toObject();
   const hotelPropiedades = Object.keys(hotelObj);
 
-  console.log(`\n=== Hotel ${nombreHotel} encontrado!===`);
+  console.log(`\n=== Hotel ${hotel.nombre} encontrado!===`);
   console.log("=== Información: ===");
 
   hotelPropiedades.forEach(propiedad => {
@@ -183,7 +179,9 @@ async function buscarHotel() {
 
 // (5)
 async function buscarPoiPorHotel() {
-  const nombreHotel = readlineSync.question("Indique el nombre del hotel: ")
+  const { hotelSeleccionado } = await seleccionarHotel();
+  const hotel = await obtenerHotelPorId(hotelSeleccionado);
+  const nombreHotel = hotel.nombre;
   const poiCernanos = await obtenerPoiPorHotel(nombreHotel);
   if(poiCernanos.length === 0) {
     console.log(`\n=== No se encontraron puntos de interés cercanos al hotel ${nombreHotel} ===`);
