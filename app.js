@@ -5,7 +5,9 @@ import { capitalize } from './utils/mayus.js';
 import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
 import { eliminarHabitacion, obtenerHabitacionPorId } from './services/habitacionService.js';
-import { agregarHuesped } from './services/huespedService.js'
+import { agregarHuesped, obtenerHuespedPorId, obtenerTodosLosHuespedes } from './services/huespedService.js'
+import { agregarReserva, validarDisponibilidad } from './services/reservaService.js';
+import { crearCodigoReserva } from "./utils/codes.js";
 
 async function main() {
   await mongoConnection;
@@ -250,7 +252,52 @@ async function nuevoHuesped() {
 
   const huespedData = { nombre, apellido, telefonos, emails, direccion };
 
-  await agregarHuesped(huespedData);
+  return await agregarHuesped(huespedData);
+}
+
+async function nuevaReserva() {
+  try {
+    const { hotelSeleccionado } = await seleccionarHotel();
+    const hotel = await obtenerHotelPorId(hotelSeleccionado);
+    if (!hotel) {
+      return;
+    }
+
+    const { habitacionSeleccionada } = await seleccionarHabitacion(hotel);
+
+    if (!habitacionSeleccionada) {
+      return;
+    }
+
+    console.log("1. Agregar Huesped");
+    console.log("2. Buscar Huesped");
+    const opcion = readlineSync.question("Selecciona una opción: ");
+    let huesped = null;
+    switch (opcion) {
+      case "1":
+        huesped = (await nuevoHuesped())._id;
+        break;
+      case "2":
+        huesped = await seleccionarHuesped();
+        break;
+    }
+    const codigo = crearCodigoReserva();
+    let fecha_inicio, fecha_fin;
+    let fechaValida = false;
+    while(!fechaValida) {
+      fecha_inicio = readlineSync.question("Fecha Inicio: ");
+      fecha_fin = readlineSync.question("Fecha Fin: ");
+      fechaValida = await validarDisponibilidad(habitacionSeleccionada, fecha_inicio, fecha_fin);
+    }
+    
+    const precio = readlineSync.question("Precio: ");
+    const habitacion = habitacionSeleccionada;
+    const reserva = {fecha_inicio, fecha_fin, precio, habitacion, huesped, codigo};
+    await agregarReserva(reserva);
+
+  } catch (error) {
+    console.log("Error al crear reserva", error);
+  }
 }
 
 //privates
@@ -294,10 +341,35 @@ async function seleccionarHabitacion(hotel) {
       {
         type: 'list',
         name: 'habitacionSeleccionada',
-        message: 'Selecciona una habitacion del hotel "' + hotel.nombre + '" que deseas eliminar:',
+        message: 'Selecciona una habitacion del hotel "' + hotel.nombre + '":',
         choices: opcionesHabitaciones
       }
     ]);
+}
+
+async function seleccionarHuesped() {
+  const huespedes = await obtenerTodosLosHuespedes();
+  
+    if (huespedes.length == 0) {
+      console.log("No hay Huespedes");
+      return { huespedSeleccionado : null };
+    }
+
+    const opciones = huespedes.map(h => ({
+      name: h.nombre + " " + h.apellido,
+      value: h._id.toString() 
+    }));
+
+    let { huespedSeleccionado} = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'huespedSeleccionado',
+        message: 'Selecciona el huesped:',
+        choices: opciones
+      }
+    ]);
+
+    return huespedSeleccionado;
 }
 
 function pending(){

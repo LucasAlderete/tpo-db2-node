@@ -1,8 +1,16 @@
 import { Huesped } from "../models/huespedModel.js";
-import { neo4jSession } from '../config/db.js';
 
 export async function agregarHuesped(huespedData) {
     const nuevoHuesped = new Huesped(huespedData);
-    await nuevoHuesped.save();
+    const huespedCreado = await nuevoHuesped.save();
     console.log("Huésped agregado exitosamente.");
+    return huespedCreado;
+}
+
+export async function obtenerTodosLosHuespedes() {
+    return await Huesped.find();
+}
+
+export async function obtenerHuespedPorId(id) {
+    return await Huesped.findById(id);
 }

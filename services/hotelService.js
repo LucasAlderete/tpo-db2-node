@@ -1,6 +1,6 @@
 import { Hotel } from "../models/hotelModel.js";
-import { neo4jSession } from '../config/db.js';
 import { Habitacion } from "../models/habitacionModel.js";
+import { neo4jSession } from '../config/db.js';
 
 export async function agregarHotel(data) {
     try {
