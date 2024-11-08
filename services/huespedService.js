@@ -12,5 +12,6 @@ export async function obtenerTodosLosHuespedes() {
 }
 
 export async function obtenerHuespedPorId(id) {
+    console.log("Buscando huesped por id: " + id);
     return await Huesped.findById(id);
 }

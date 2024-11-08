@@ -1,4 +1,5 @@
 import readlineSync from 'readline-sync';
+import moment from 'moment';
 import inquirer from 'inquirer';
 import { mongoConnection, cerrarConexiones } from './config/db.js';
 import { capitalize } from './utils/mayus.js';
@@ -6,7 +7,7 @@ import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obte
 import { obtenerTodosPoi } from './services/poiService.js';
 import { eliminarHabitacion, obtenerHabitacionPorId } from './services/habitacionService.js';
 import { agregarHuesped, obtenerHuespedPorId, obtenerTodosLosHuespedes } from './services/huespedService.js'
-import { agregarReserva, validarDisponibilidad } from './services/reservaService.js';
+import { agregarReserva, validarDisponibilidad, buscarReservaPorFecha } from './services/reservaService.js';
 import { crearCodigoReserva } from "./utils/codes.js";
 
 async function main() {
@@ -26,8 +27,10 @@ async function main() {
       console.log("9. Modificar Habitacion");
       console.log("10. Agregar Huesped");
       console.log("11. Agregar Reserva");
+      console.log("12. Buscar Huesped");
+      console.log("13. Buscar reserva");
       console.log("0. Salir");
-      const opcion = readlineSync.question("Selecciona una opción: ");
+      const opcion = readlineSync.question("Selecciona una opcion: ");
   
       switch (opcion) {
         case "0":
@@ -65,6 +68,12 @@ async function main() {
           break;
         case "11":
           await nuevaReserva();
+          break;
+        case "12":
+          await seleccionarYBuscarHuesped();
+          break;
+        case "13":
+          await buscarReserva();
           break;
         default:
           console.log("Opción no válida. Inténtalo de nuevo.");
@@ -283,8 +292,8 @@ async function nuevaReserva() {
     let fecha_inicio, fecha_fin;
     let fechaValida = false;
     while(!fechaValida) {
-      fecha_inicio = readlineSync.question("Fecha Inicio: ");
-      fecha_fin = readlineSync.question("Fecha Fin: ");
+      fecha_inicio = readlineSync.question("Fecha Inicio (yyyy-MM-dd): ");
+      fecha_fin = readlineSync.question("Fecha Fin (yyyy-MM-dd): ");
       fechaValida = await validarDisponibilidad(habitacionSeleccionada, fecha_inicio, fecha_fin);
     }
     
@@ -295,6 +304,47 @@ async function nuevaReserva() {
 
   } catch (error) {
     console.log("Error al crear reserva", error);
+  }
+}
+
+
+// (12)
+async function seleccionarYBuscarHuesped() {
+  try {
+    const huespedSeleccionado  = await seleccionarHuesped();
+    const huesped = await obtenerHuespedPorId(huespedSeleccionado)
+    const huespedObj = huesped.toObject();
+
+    const camposParaMostrar = [
+      "nombre", "apellido", "telefonos", "emails", 
+      "direccion.calle", "direccion.numero", "direccion.codigoPostal", 
+      "direccion.provincia", "direccion.pais"
+    ];
+
+    console.log(`\n=== Huesped ${huesped.nombre} encontrado!===`);
+    console.log("=== Información seleccionada: ===");
+
+    // Mostrar los campos específicos
+    camposParaMostrar.forEach(campo => {
+      const partes = campo.split('.'); // Divide el campo en partes, por ejemplo "direccion.calle"
+      let valor = huespedObj;
+
+      // Navega por el objeto para obtener el valor de las propiedades anidadas
+      partes.forEach(p => {
+        if (valor && valor[p] !== undefined) {
+          valor = valor[p];
+        }
+      });
+
+      if (valor !== undefined) {
+        // Procesa el nombre del campo para quitar la parte "direccion."
+        const nombreCampo = partes.length > 1 ? partes[1] : partes[0]; // Obtiene la última parte (ej. "calle", "numero")
+        console.log(`${capitalize(nombreCampo)}: ${valor}`);
+      }
+    });
+
+  } catch (err) {
+    console.error("Error al buscar el huesped:", err);
   }
 }
 
@@ -367,8 +417,50 @@ async function seleccionarHuesped() {
       }
     ]);
 
+
     return huespedSeleccionado;
 }
+
+
+async function buscarReserva() {
+    const { hotelSeleccionado } = await seleccionarHotel();
+  
+    let fechaValida = null;
+
+    while(fechaValida == null) {
+      let fechaInput = readlineSync.question("Ingrese una Fecha valida (yyyy-MM-dd): ");
+      if (!fechaInput || isNaN(new Date(fechaInput).getTime())) {
+        console.log('Fecha no valida');
+      } else {
+        fechaValida = fechaInput
+      }
+    }
+    
+    let reservas = await buscarReservaPorFecha(fechaValida, hotelSeleccionado);
+
+    if (reservas.length === 0) {
+      console.log(`No se encontraron reservas para la fecha ${fechaValida}.`);
+      return;
+    } else {
+      console.log('--------------------------'); // Separador entre documentos
+      
+      reservas.forEach(res => {
+        console.log(`Reserva - Codigo: ${res.codigo}`);
+        console.log(`Reserva - Fecha de inicio: ${moment(res.fecha_inicio).format('DD/MM/YYYY')}`);
+        console.log(`Reserva - Fecha de fin: ${moment(res.fecha_fin).format('DD/MM/YYYY')}`);
+        console.log(`Reserva - Precio: $${res.precio}`);
+        console.log(`Hotel - Nombre: ${res.infoHotel.nombre}`);
+        console.log(`Habitacion - Nombre: ${res.infoHabitacion.nombre}`);
+        console.log(`Habitacion - Tipo: ${res.infoHabitacion.tipo}`);
+        console.log(`Habitacion - Capacidad: ${res.infoHabitacion.capacidad}`);
+        console.log(`Habitacion - Precio base: $${res.infoHabitacion.precio_base}`);
+        console.log(`Habitacion - Amenities: ${res.infoHabitacion.amenities.join(", ")}`);
+        console.log('--------------------------'); // Separador entre documentos
+      });
+    }
+}
+
+
 
 function pending(){
     console.log("Pendiente");
