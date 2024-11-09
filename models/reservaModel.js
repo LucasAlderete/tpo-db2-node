@@ -6,7 +6,7 @@ const reservaSchema = new mongoose.Schema({
   fecha_fin: Date,
   precio: Number,
   habitacion: { type: mongoose.Schema.Types.ObjectId, ref: 'Habitacion' },
-  husped: { type: mongoose.Schema.Types.ObjectId, ref: 'Huesped' },
+  huesped: { type: mongoose.Schema.Types.ObjectId, ref: 'Huesped' },
 });
 
 export const Reserva = mongoose.model("Reserva", reservaSchema);

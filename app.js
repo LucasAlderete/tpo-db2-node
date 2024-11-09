@@ -261,7 +261,7 @@ async function nuevoHuesped() {
 
   return await agregarHuesped(huespedData);
 }
-
+// (11)
 async function nuevaReserva() {
   try {
     const { hotelSeleccionado } = await seleccionarHotel();
@@ -288,6 +288,7 @@ async function nuevaReserva() {
         huesped = await seleccionarHuesped();
         break;
     }
+
     const codigo = crearCodigoReserva();
     let fecha_inicio, fecha_fin;
     let fechaValida = false;
