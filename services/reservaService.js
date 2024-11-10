@@ -70,46 +70,47 @@ export async function validarDisponibilidad(habitacionId, fechaInicio, fechaFin)
 export async function buscarReservaPorFecha(paramFecha, IdHotel) {
 
     try {
-      const fecha = new Date(paramFecha); // Convertir la fecha a un objeto Date
-  
+      const fecha = new Date(paramFecha);   
       const reservas = await Reserva.aggregate([
-        // Primer $lookup: Unir con la colección de habitaciones
         {
           $lookup: {
-            from: 'habitacions', // Nombre de la colección de habitaciones
-            localField: 'habitacion', // Campo en reservas que hace referencia al _id de la habitación
-            foreignField: '_id', // Campo en habitaciones que corresponde al _id
+            from: 'habitacions', 
+            localField: 'habitacion', 
+            foreignField: '_id', 
             as: 'infoHabitacion'
           }
         },
-        {
-          $unwind: '$infoHabitacion' // Descompone el array para facilitar el acceso a los datos de la habitación
-        },
-        // Segundo $lookup: Unir con la colección de hoteles
+        { $unwind: '$infoHabitacion' },
+        
         {
           $lookup: {
-            from: 'hotels', // Nombre de la colección de hoteles
-            localField: 'infoHabitacion.hotel', // Campo en habitaciones que hace referencia al _id del hotel
-            foreignField: '_id', // Campo en hoteles que corresponde al _id
+            from: 'hotels', 
+            localField: 'infoHabitacion.hotel', 
+            foreignField: '_id', 
             as: 'infoHotel'
           }
         },
+        { $unwind: '$infoHotel' },
+  
         {
-          $unwind: {
-            path: '$infoHotel', // Descompone el array de hoteles
-            preserveNullAndEmptyArrays: true // Esto permite que se muestren registros sin coincidencias
+          $lookup: {
+            from: 'huespeds',
+            localField: 'huesped', 
+            foreignField: '_id', 
+            as: 'infoHuesped'
           }
         },
-        // Filtramos las reservas que cumplen con los parámetros
+        { $unwind: '$infoHuesped' },
+  
         {
           $match: {
-            'infoHotel._id': new mongoose.Types.ObjectId(IdHotel), // Filtramos por el id del hotel
-            fecha_inicio: { $lte: fecha }, // Filtra por fecha de inicio mayor o igual a parametroFecha
-            fecha_fin: { $gte: fecha } // Filtra por fecha de fin menor o igual a parametroFecha
+            'infoHotel._id': new mongoose.Types.ObjectId(IdHotel),
+            fecha_inicio: { $lte: fecha }, 
+            fecha_fin: { $gte: fecha } 
           }
-        },
-        // Proyectamos los campos que necesitamos
+        }
       ]);
+  
       return reservas;
     } catch (error) {
       console.error('Error al obtener las reservas:', error);
