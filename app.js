@@ -3,7 +3,7 @@ import moment from 'moment';
 import inquirer from 'inquirer';
 import { mongoConnection, cerrarConexiones } from './config/db.js';
 import { capitalize } from './utils/mayus.js';
-import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId } from './services/hotelService.js';
+import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId, modificarHotel } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
 import { eliminarHabitacion, obtenerHabitacionPorId } from './services/habitacionService.js';
 import { agregarHuesped, obtenerHuespedPorId, obtenerTodosLosHuespedes } from './services/huespedService.js'
@@ -58,7 +58,7 @@ async function main() {
           await seleccionarHotelYEliminarHabitacion();
           break;
         case "8":
-          pending(); //Modificar hotel
+          await seleccionarYModificarHotel();
           break;
         case "9":
           pending(); //Modificar habitacion
@@ -235,6 +235,34 @@ async function seleccionarHotelYEliminarHabitacion() {
     console.log("Error al eliminar habitacion", error);
   }
 }
+
+// (8)
+async function seleccionarYModificarHotel() {
+  const { hotelSeleccionado } = await seleccionarHotel();
+
+  const nombre = readlineSync.question("Nombre del hotel: ");
+  const direccion = readlineSync.question("Direccion: ");
+  const telefono = readlineSync.question("Telefono: ").split(",");
+  const email = readlineSync.question("Email: ");
+  let puntosInteres = readlineSync.question("Puntos de interes: ").split(",");
+  if (puntosInteres = '') {
+    puntosInteres = undefined;
+  }
+
+  const data = {
+      nombre: nombre || undefined,
+      direccion: direccion || undefined,
+      telefono: telefono.length ? telefono : undefined,
+      email: email || undefined,
+      puntosInteres: puntosInteres.length ? puntosInteres : undefined
+  };
+
+  await modificarHotel(hotelSeleccionado, data);
+  console.log("Hotel modificado exitosamente.");
+}
+
+
+// (9)
 
 // (10)
 async function nuevoHuesped() {

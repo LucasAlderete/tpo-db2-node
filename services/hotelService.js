@@ -215,3 +215,75 @@ export async function obtenerHotelPorId(idRef) {
   }
 }
 
+export async function modificarHotel(idRef, data) {
+  try {
+      // Actualizar en MongoDB
+      const hotel = await Hotel.findById(idRef);
+      if (!hotel) {
+          throw new Error("Hotel no encontrado");
+      }
+
+      // Actualiza los campos según los datos proporcionados
+      hotel.nombre = data.nombre || hotel.nombre;
+      hotel.direccion = data.direccion || hotel.direccion;
+      hotel.telefono = data.telefono || hotel.telefono;
+      hotel.email = data.email || hotel.email;
+      hotel.puntosInteres = data.puntosInteres || hotel.puntosInteres;
+
+      await hotel.save();
+      console.log("Hotel actualizado en MongoDB");
+
+      // Actualizar en Neo4j
+      await neo4jSession.run(
+          `MATCH (h:Hotel {id_ref: $hotelId})
+           SET h.nombre = $nombre
+           RETURN h`,
+          {
+              hotelId: hotel._id.toString(),
+              nombre: hotel.nombre
+          }
+      );
+      console.log("Nombre de hotel actualizado en Neo4j");
+
+      // Actualizar puntos de interés en Neo4j
+      for (const poi of data.puntosInteres) {
+          const result = await neo4jSession.run(
+              `MATCH (p:POI {nombre: $nombre}) RETURN p`,
+              { nombre: poi }
+          );
+
+          if (result.records.length === 0) {
+              await neo4jSession.run(
+                  `
+                  MATCH (h:Hotel {id_ref: $hotelId})
+                  CREATE (p:POI {nombre: $nombre})
+                  CREATE (p)-[:CERCANO_A]->(h)
+                  CREATE (h)-[:CERCANO_A]->(p)
+                  `,
+                  {
+                      hotelId: hotel._id.toString(),
+                      nombre: poi
+                  }
+              );
+              console.log(`Punto de interés '${poi}' creado y relacionado con el hotel en Neo`);
+          } else {
+              await neo4jSession.run(
+                  `
+                  MATCH (p:POI {nombre: $nombre}), (h:Hotel {id_ref: $hotelId})
+                  MERGE (p)-[:CERCANO_A]->(h)
+                  MERGE (h)-[:CERCANO_A]->(p)
+                  `,
+                  {
+                      hotelId: hotel._id.toString(),
+                      nombre: poi
+                  }
+              );
+              console.log(`Punto de interés '${poi}' relacionado con el hotel en Neo`);
+          }
+      }
+
+  } catch (err) {
+      console.error("Error al modificar Hotel:", err);
+  }
+}
+
