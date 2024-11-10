@@ -554,6 +554,9 @@ async function buscarReserva() {
         console.log(`Habitacion - Capacidad: ${res.infoHabitacion.capacidad}`);
         console.log(`Habitacion - Precio base: $${res.infoHabitacion.precio_base}`);
         console.log(`Habitacion - Amenities: ${res.infoHabitacion.amenities.join(", ")}`);
+        console.log(`Huesped - Nombre y apellido: ${res.infoHuesped.nombre} ${res.infoHuesped.apellido}`);
+        console.log(`Huesped - Teléfonos: ${res.infoHuesped.telefonos.join(", ")}`);
+        console.log(`Huesped - Emails: ${res.infoHuesped.emails.join(", ")}`);
         console.log('--------------------------'); // Separador entre documentos
       });
     }
