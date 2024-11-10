@@ -2,7 +2,12 @@ import { neo4jSession } from '../config/db.js';
 import { Habitacion } from "../models/habitacionModel.js";
 
 export async function obtenerHabitacionPorId(id) {
-    return await Habitacion.findById(id);
+    try {
+        return await Habitacion.findById(id);
+        
+      } catch (error) {
+        console.log("error al obtener habitacion por _id", error);
+      }
 }
 
 export async function eliminarHabitacion(idRef) {

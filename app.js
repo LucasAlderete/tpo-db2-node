@@ -29,6 +29,7 @@ async function main() {
       console.log("11. Agregar Reserva");
       console.log("12. Buscar Huesped");
       console.log("13. Buscar reserva");
+      console.log("14. Buscar amenities de una habitacion");
       console.log("0. Salir");
       const opcion = readlineSync.question("Selecciona una opcion: ");
   
@@ -74,6 +75,9 @@ async function main() {
           break;
         case "13":
           await buscarReserva();
+          break;
+        case "14":
+          await buscarAmenitiesPorHabitacion();
           break;
         default:
           console.log("Opción no válida. Inténtalo de nuevo.");
@@ -486,6 +490,24 @@ async function seleccionarHuesped() {
 
 
     return huespedSeleccionado;
+}
+
+async function buscarAmenitiesPorHabitacion(){
+  const { hotelSeleccionado } = await seleccionarHotel();
+  const hotel = await obtenerHotelPorId(hotelSeleccionado);
+  if (!hotel) {
+    return;
+  }
+
+  const { habitacionSeleccionada } = await seleccionarHabitacion(hotel);
+
+  if (!habitacionSeleccionada) {
+    return;
+  }
+
+  const habitacion = await obtenerHabitacionPorId(habitacionSeleccionada);
+
+  console.log(`\nAmenities de la habitación ${habitacion.nombre}: ${habitacion.amenities.join(", ")}`);
 }
 
 
