@@ -5,7 +5,7 @@ import { mongoConnection, cerrarConexiones } from './config/db.js';
 import { capitalize } from './utils/mayus.js';
 import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId, modificarHotel } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
-import { eliminarHabitacion, obtenerHabitacionPorId } from './services/habitacionService.js';
+import { eliminarHabitacion, obtenerHabitacionPorId, modificarHabitacion } from './services/habitacionService.js';
 import { agregarHuesped, obtenerHuespedPorId, obtenerTodosLosHuespedes } from './services/huespedService.js'
 import { agregarReserva, validarDisponibilidad, buscarReservaPorFecha } from './services/reservaService.js';
 import { crearCodigoReserva } from "./utils/codes.js";
@@ -61,7 +61,7 @@ async function main() {
           await seleccionarYModificarHotel();
           break;
         case "9":
-          pending(); //Modificar habitacion
+          await seleccionarHotelYModificarHabitacion();
           break;
         case "10":
           await nuevoHuesped();
@@ -240,6 +240,8 @@ async function seleccionarHotelYEliminarHabitacion() {
 async function seleccionarYModificarHotel() {
   const { hotelSeleccionado } = await seleccionarHotel();
 
+  console.log("IMPORTANTE: Dejar vacio el campo para no modificarlo\n");
+
   const nombre = readlineSync.question("Nombre del hotel: ");
   const direccion = readlineSync.question("Direccion: ");
   const telefono = readlineSync.question("Telefono: ").split(",");
@@ -258,11 +260,47 @@ async function seleccionarYModificarHotel() {
   };
 
   await modificarHotel(hotelSeleccionado, data);
-  console.log("Hotel modificado exitosamente.");
+  console.log("Hotel modificado exitsamente.");
 }
 
-
 // (9)
+async function seleccionarHotelYModificarHabitacion() {
+  try {
+    
+    const { hotelSeleccionado } = await seleccionarHotel();
+    const hotel = await obtenerHotelPorId(hotelSeleccionado);
+    if (!hotel) {
+      return;
+    }
+
+    const { habitacionSeleccionada } = await seleccionarHabitacion(hotel);
+
+    if (!habitacionSeleccionada) {
+      return;
+    }
+
+    console.log("IMPORTANTE: Dejar vacio el campo para no modificarlo\n");
+
+    const nombre = readlineSync.question("Nombre habitacion: ");
+    const tipo = readlineSync.question("Tipo: ");
+    const capacidad = readlineSync.question("Capacidad: ");
+    const precio_base = readlineSync.question("Precio Base: ");
+    const amenities = readlineSync.question("Amenities (separados por coma): ").split(",");
+
+    const data = {
+        nombre: nombre || undefined,
+        tipo: tipo || undefined,
+        capacidad: capacidad || undefined,
+        precio_base: precio_base || undefined,
+        amenities: amenities.length ? amenities : undefined
+    };
+
+    await modificarHabitacion(habitacionSeleccionada, data);
+    console.log("Habitación modificada exitosamente.");
+  } catch (error) {
+    console.log("Error al modificar habitacion.", error);
+  }
+}
 
 // (10)
 async function nuevoHuesped() {
