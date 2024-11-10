@@ -5,7 +5,7 @@ import { mongoConnection, cerrarConexiones } from './config/db.js';
 import { capitalize } from './utils/mayus.js';
 import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId, modificarHotel } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
-import { eliminarHabitacion, obtenerHabitacionPorId, modificarHabitacion } from './services/habitacionService.js';
+import { eliminarHabitacion, obtenerHabitacionPorId, modificarHabitacion, buscarHabitacionPorFechas } from './services/habitacionService.js';
 import { agregarHuesped, obtenerHuespedPorId, obtenerTodosLosHuespedes } from './services/huespedService.js'
 import { agregarReserva, validarDisponibilidad, buscarReservaPorFecha } from './services/reservaService.js';
 import { crearCodigoReserva } from "./utils/codes.js";
@@ -30,6 +30,7 @@ async function main() {
       console.log("12. Buscar Huesped");
       console.log("13. Buscar reserva");
       console.log("14. Buscar amenities de una habitacion");
+      console.log("15. Buscar Habitaciones disponibles por fechas");
       console.log("0. Salir");
       const opcion = readlineSync.question("Selecciona una opcion: ");
   
@@ -76,9 +77,12 @@ async function main() {
         case "13":
           await buscarReserva();
           break;
-        case "14":
-          await buscarAmenitiesPorHabitacion();
-          break;
+          case "14":
+            await buscarAmenitiesPorHabitacion();
+            break;
+          case "15":
+            await buscarHabitacionesDisponiblesPorFecha();
+            break;
         default:
           console.log("Opción no válida. Inténtalo de nuevo.");
           break;
@@ -510,6 +514,12 @@ async function buscarAmenitiesPorHabitacion(){
   console.log(`\nAmenities de la habitación ${habitacion.nombre}: ${habitacion.amenities.join(", ")}`);
 }
 
+// 15
+async function buscarHabitacionesDisponiblesPorFecha() {
+  const fecha_inicio = readlineSync.question("Fecha Inicio (yyyy-MM-dd): ");
+  const fecha_fin = readlineSync.question("Fecha Fin (yyyy-MM-dd): ");
+  await buscarHabitacionPorFechas(fecha_inicio, fecha_inicio);
+}
 
 async function buscarReserva() {
     const { hotelSeleccionado } = await seleccionarHotel();

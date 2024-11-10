@@ -104,3 +104,39 @@ export async function modificarHabitacion(idRef, data) {
       console.error("Error al modificar Habitación:", err);
   }
 }
+
+export async function buscarHabitacionPorFechas(fechaInicio, fechaFin) {
+    try {
+        const result = await neo4jSession.run(
+            `
+            MATCH (habitacion:Habitacion)
+            WHERE NOT EXISTS {
+                MATCH (habitacion)-[:No_Disponible]->(reserva:Reserva)
+                WHERE (reserva.fecha_inicio < $fechaFin AND reserva.fecha_fin > $fechaInicio)
+            }
+            RETURN habitacion.nombre AS NombreHabitacion
+            ORDER BY NombreHabitacion
+            `,
+            { fechaInicio, fechaFin } // Parámetros de rango de fechas
+        );
+
+        
+        const habitacionesDisponibles = result.records.map(record => record.get('NombreHabitacion'));
+
+        if (habitacionesDisponibles.length > 0) {
+            console.log("Habitaciones disponibles:");
+            habitacionesDisponibles.forEach(nombre => {
+                console.log(`- ${nombre}`);
+            });
+        } else {
+            console.log("No hay habitaciones disponibles en ese rango de fechas.");
+        }
+
+        return habitacionesDisponibles;
+    } catch (error) {
+        console.error("Error al obtener habitaciones disponibles:", error);
+        throw error;
+    }
+}
+
+
