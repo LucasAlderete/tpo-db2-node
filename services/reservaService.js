@@ -1,6 +1,5 @@
 import { Reserva } from "../models/reservaModel.js";
-import { Huesped } from "../models/huespedModel.js";
-import { Hotel } from "../models/hotelModel.js";
+
 import { neo4jSession } from '../config/db.js';
 import mongoose from "mongoose";
 import {obtenerHuespedPorId} from "./huespedService.js";
