@@ -230,6 +230,7 @@ export async function modificarHotel(idRef, data) {
       hotel.email = data.email || hotel.email;
       hotel.puntosInteres = data.puntosInteres || hotel.puntosInteres;
 
+
       await hotel.save();
       console.log("Hotel actualizado en MongoDB");
 
@@ -244,6 +245,7 @@ export async function modificarHotel(idRef, data) {
           }
       );
       console.log("Nombre de hotel actualizado en Neo4j");
+
 
       // Actualizar puntos de interés en Neo4j
       for (const poi of data.puntosInteres) {

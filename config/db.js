@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 import neo4j from "neo4j-driver";
 
-const mongoConnection = mongoose.connect('mongodb://localhost:27017/tareas_db')
+const mongoConnection = mongoose.connect('mongodb://127.0.0.1:27017/tareas_db')
 .catch((err) => console.error("Error conectando a MongoDB:", err));
 
 const neo4jDriver = neo4j.driver(
-  "bolt://localhost:7687",
+  "bolt://127.0.0.1:7687",
   neo4j.auth.basic("neo4j", "macbookpro")
 );
 const neo4jSession = neo4jDriver.session();
