@@ -3,11 +3,16 @@ import moment from 'moment';
 import inquirer from 'inquirer';
 import { mongoConnection, cerrarConexiones } from './config/db.js';
 import { capitalize } from './utils/mayus.js';
-import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId, modificarHotel } from './services/hotelService.js';
+import { agregarHabitacion, agregarHotel, obtenerHotel, obtenerPoiPorHotel, obtenerHotelCercanoAPoiNeo, obtenerTodosLosHoteles, eliminarHotel, obtenerHotelPorId } from './services/hotelService.js';
 import { obtenerTodosPoi } from './services/poiService.js';
-import { eliminarHabitacion, obtenerHabitacionPorId, modificarHabitacion, buscarHabitacionPorFechas } from './services/habitacionService.js';
+import { eliminarHabitacion, obtenerHabitacionPorId } from './services/habitacionService.js';
 import { agregarHuesped, obtenerHuespedPorId, obtenerTodosLosHuespedes } from './services/huespedService.js'
-import { agregarReserva, validarDisponibilidad, buscarReservaPorFecha } from './services/reservaService.js';
+import {
+  agregarReserva,
+  validarDisponibilidad,
+  buscarReservaPorFecha,
+  buscarReservaPorConfirmacion, buscarReservaPorHuesped
+} from './services/reservaService.js';
 import { crearCodigoReserva } from "./utils/codes.js";
 
 async function main() {
@@ -29,8 +34,6 @@ async function main() {
       console.log("11. Agregar Reserva");
       console.log("12. Buscar Huesped");
       console.log("13. Buscar reserva");
-      console.log("14. Buscar amenities de una habitacion");
-      console.log("15. Buscar Habitaciones disponibles por fechas");
       console.log("0. Salir");
       const opcion = readlineSync.question("Selecciona una opcion: ");
   
@@ -60,10 +63,10 @@ async function main() {
           await seleccionarHotelYEliminarHabitacion();
           break;
         case "8":
-          await seleccionarYModificarHotel();
+          pending(); //Modificar hotel
           break;
         case "9":
-          await seleccionarHotelYModificarHabitacion();
+          pending(); //Modificar habitacion
           break;
         case "10":
           await nuevoHuesped();
@@ -77,12 +80,6 @@ async function main() {
         case "13":
           await buscarReserva();
           break;
-          case "14":
-            await buscarAmenitiesPorHabitacion();
-            break;
-          case "15":
-            await buscarHabitacionesDisponiblesPorFecha();
-            break;
         default:
           console.log("Opción no válida. Inténtalo de nuevo.");
           break;
@@ -244,72 +241,6 @@ async function seleccionarHotelYEliminarHabitacion() {
   }
 }
 
-// (8)
-async function seleccionarYModificarHotel() {
-  const { hotelSeleccionado } = await seleccionarHotel();
-
-  console.log("IMPORTANTE: Dejar vacio el campo para no modificarlo\n");
-
-  const nombre = readlineSync.question("Nombre del hotel: ");
-  const direccion = readlineSync.question("Direccion: ");
-  const telefono = readlineSync.question("Telefono: ").split(",");
-  const email = readlineSync.question("Email: ");
-  let puntosInteres = readlineSync.question("Puntos de interes: ").split(",");
-  if (puntosInteres = '') {
-    puntosInteres = undefined;
-  }
-
-  const data = {
-      nombre: nombre || undefined,
-      direccion: direccion || undefined,
-      telefono: telefono.length ? telefono : undefined,
-      email: email || undefined,
-      puntosInteres: puntosInteres.length ? puntosInteres : undefined
-  };
-
-  await modificarHotel(hotelSeleccionado, data);
-  console.log("Hotel modificado exitsamente.");
-}
-
-// (9)
-async function seleccionarHotelYModificarHabitacion() {
-  try {
-    
-    const { hotelSeleccionado } = await seleccionarHotel();
-    const hotel = await obtenerHotelPorId(hotelSeleccionado);
-    if (!hotel) {
-      return;
-    }
-
-    const { habitacionSeleccionada } = await seleccionarHabitacion(hotel);
-
-    if (!habitacionSeleccionada) {
-      return;
-    }
-
-    console.log("IMPORTANTE: Dejar vacio el campo para no modificarlo\n");
-
-    const nombre = readlineSync.question("Nombre habitacion: ");
-    const tipo = readlineSync.question("Tipo: ");
-    const capacidad = readlineSync.question("Capacidad: ");
-    const precio_base = readlineSync.question("Precio Base: ");
-    const amenities = readlineSync.question("Amenities (separados por coma): ").split(",");
-
-    const data = {
-        nombre: nombre || undefined,
-        tipo: tipo || undefined,
-        capacidad: capacidad || undefined,
-        precio_base: precio_base || undefined,
-        amenities: amenities.length ? amenities : undefined
-    };
-
-    await modificarHabitacion(habitacionSeleccionada, data);
-    console.log("Habitación modificada exitosamente.");
-  } catch (error) {
-    console.log("Error al modificar habitacion.", error);
-  }
-}
-
 // (10)
 async function nuevoHuesped() {
   const nombre = readlineSync.question("Nombre: ");
@@ -335,7 +266,7 @@ async function nuevoHuesped() {
 
   return await agregarHuesped(huespedData);
 }
-// (11)
+
 async function nuevaReserva() {
   try {
     const { hotelSeleccionado } = await seleccionarHotel();
@@ -362,7 +293,6 @@ async function nuevaReserva() {
         huesped = await seleccionarHuesped();
         break;
     }
-
     const codigo = crearCodigoReserva();
     let fecha_inicio, fecha_fin;
     let fechaValida = false;
@@ -384,7 +314,7 @@ async function nuevaReserva() {
 
 
 // (12)
-async function seleccionarYBuscarHuesped() {
+export async function seleccionarYBuscarHuesped() {
   try {
     const huespedSeleccionado  = await seleccionarHuesped();
     const huesped = await obtenerHuespedPorId(huespedSeleccionado)
@@ -470,7 +400,7 @@ async function seleccionarHabitacion(hotel) {
     ]);
 }
 
-async function seleccionarHuesped() {
+export async function seleccionarHuesped() {
   const huespedes = await obtenerTodosLosHuespedes();
   
     if (huespedes.length == 0) {
@@ -496,70 +426,67 @@ async function seleccionarHuesped() {
     return huespedSeleccionado;
 }
 
-async function buscarAmenitiesPorHabitacion(){
-  const { hotelSeleccionado } = await seleccionarHotel();
-  const hotel = await obtenerHotelPorId(hotelSeleccionado);
-  if (!hotel) {
-    return;
-  }
-
-  const { habitacionSeleccionada } = await seleccionarHabitacion(hotel);
-
-  if (!habitacionSeleccionada) {
-    return;
-  }
-
-  const habitacion = await obtenerHabitacionPorId(habitacionSeleccionada);
-
-  console.log(`\nAmenities de la habitación ${habitacion.nombre}: ${habitacion.amenities.join(", ")}`);
-}
-
-// 15
-async function buscarHabitacionesDisponiblesPorFecha() {
-  const fecha_inicio = readlineSync.question("Fecha Inicio (yyyy-MM-dd): ");
-  const fecha_fin = readlineSync.question("Fecha Fin (yyyy-MM-dd): ");
-  await buscarHabitacionPorFechas(fecha_inicio, fecha_inicio);
-}
 
 async function buscarReserva() {
-    const { hotelSeleccionado } = await seleccionarHotel();
-  
-    let fechaValida = null;
 
-    while(fechaValida == null) {
-      let fechaInput = readlineSync.question("Ingrese una Fecha valida (yyyy-MM-dd): ");
-      if (!fechaInput || isNaN(new Date(fechaInput).getTime())) {
-        console.log('Fecha no valida');
-      } else {
-        fechaValida = fechaInput
+
+  console.log("Selecciona el criterio de búsqueda:");
+  console.log("1. Buscar por número de confirmación");
+  console.log("2. Buscar por nombre del huésped");
+  console.log("3. Buscar por fecha de reserva");
+
+  const opcionReserva = readlineSync.question("Ingrese el número de la opción: ");
+
+  let reservas = [];
+
+  switch(opcionReserva) {
+    case "1":
+
+      const numeroConfirmacion = readlineSync.question("Ingrese el número de confirmación: ");
+      reservas = await buscarReservaPorConfirmacion(numeroConfirmacion);
+      break;
+
+    case "2":
+      reservas = await buscarReservaPorHuesped();
+      break;
+
+    case "3":
+      const { hotelSeleccionado } = await seleccionarHotel();
+      let fechaValida = null;
+      while(fechaValida == null) {
+        let fechaInput = readlineSync.question("Ingrese una Fecha válida (yyyy-MM-dd): ");
+        if (!fechaInput || isNaN(new Date(fechaInput).getTime())) {
+          console.log('Fecha no válida');
+        } else {
+          fechaValida = fechaInput;
+        }
       }
-    }
-    
-    let reservas = await buscarReservaPorFecha(fechaValida, hotelSeleccionado);
+      reservas = await buscarReservaPorFecha(fechaValida, hotelSeleccionado);
+      break;
 
-    if (reservas.length === 0) {
-      console.log(`No se encontraron reservas para la fecha ${fechaValida}.`);
+    default:
+      console.log("Opción no válida.");
       return;
-    } else {
-      console.log('--------------------------'); // Separador entre documentos
-      
-      reservas.forEach(res => {
-        console.log(`Reserva - Codigo: ${res.codigo}`);
-        console.log(`Reserva - Fecha de inicio: ${moment(res.fecha_inicio).format('DD/MM/YYYY')}`);
-        console.log(`Reserva - Fecha de fin: ${moment(res.fecha_fin).format('DD/MM/YYYY')}`);
-        console.log(`Reserva - Precio: $${res.precio}`);
-        console.log(`Hotel - Nombre: ${res.infoHotel.nombre}`);
-        console.log(`Habitacion - Nombre: ${res.infoHabitacion.nombre}`);
-        console.log(`Habitacion - Tipo: ${res.infoHabitacion.tipo}`);
-        console.log(`Habitacion - Capacidad: ${res.infoHabitacion.capacidad}`);
-        console.log(`Habitacion - Precio base: $${res.infoHabitacion.precio_base}`);
-        console.log(`Habitacion - Amenities: ${res.infoHabitacion.amenities.join(", ")}`);
-        console.log(`Huesped - Nombre y apellido: ${res.infoHuesped.nombre} ${res.infoHuesped.apellido}`);
-        console.log(`Huesped - Teléfonos: ${res.infoHuesped.telefonos.join(", ")}`);
-        console.log(`Huesped - Emails: ${res.infoHuesped.emails.join(", ")}`);
-        console.log('--------------------------'); // Separador entre documentos
-      });
-    }
+  }
+
+  if (reservas.length === 0) {
+    console.log("No se encontraron reservas para el criterio seleccionado.");
+  } else {
+    console.log('--------------------------');
+    reservas.forEach(res => {
+      console.log(`Reserva - Código: ${res.codigo}`);
+      console.log(`Reserva - Fecha de inicio: ${moment(res.fecha_inicio).format('DD/MM/YYYY')}`);
+      console.log(`Reserva - Fecha de fin: ${moment(res.fecha_fin).format('DD/MM/YYYY')}`);
+      console.log(`Reserva - Precio: $${res.precio}`);
+      console.log(`Hotel - Nombre: ${res.infoHotel.nombre}`);
+      console.log(`Habitación - Nombre: ${res.infoHabitacion.nombre}`);
+      console.log(`Habitación - Tipo: ${res.infoHabitacion.tipo}`);
+      console.log(`Habitación - Capacidad: ${res.infoHabitacion.capacidad}`);
+      console.log(`Habitación - Precio base: $${res.infoHabitacion.precio_base}`);
+      console.log(`Habitación - Amenities: ${res.infoHabitacion.amenities.join(", ")}`);
+      console.log('--------------------------');
+    });
+  }
 }
 
 

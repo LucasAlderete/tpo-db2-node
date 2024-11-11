@@ -1,6 +1,11 @@
 import { Reserva } from "../models/reservaModel.js";
+import { Huesped } from "../models/huespedModel.js";
+import { Hotel } from "../models/hotelModel.js";
 import { neo4jSession } from '../config/db.js';
 import mongoose from "mongoose";
+import {obtenerHuespedPorId} from "./huespedService.js";
+import {seleccionarHuesped} from "../app.js";
+
 
 export async function agregarReserva(data) {
     try {
@@ -116,3 +121,136 @@ export async function buscarReservaPorFecha(paramFecha, IdHotel) {
       console.error('Error al obtener las reservas:', error);
     }
   }
+
+
+
+export async function buscarReservaPorConfirmacion(numeroConfirmacion) {
+    try {
+        const reservas = await Reserva.aggregate([
+            // Etapa 1: Filtramos por el código de confirmación de la reserva
+            {
+                $match: {
+                    codigo: numeroConfirmacion
+                }
+            },
+            // Primer $lookup: Unir con la colección de habitaciones
+            {
+                $lookup: {
+                    from: 'habitacions', // Nombre de la colección de habitaciones
+                    localField: 'habitacion', // Campo en reservas que hace referencia al _id de la habitación
+                    foreignField: '_id', // Campo en habitaciones que corresponde al _id
+                    as: 'infoHabitacion'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$infoHabitacion', // Descompone el array de habitación para facilitar acceso a datos
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            // Segundo $lookup: Unir con la colección de hoteles
+            {
+                $lookup: {
+                    from: 'hotels', // Nombre de la colección de hoteles
+                    localField: 'infoHabitacion.hotel', // Campo en habitaciones que hace referencia al _id del hotel
+                    foreignField: '_id', // Campo en hoteles que corresponde al _id
+                    as: 'infoHotel'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$infoHotel', // Descompone el array de hoteles
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            // Proyectamos los campos que necesitamos
+            {
+                $project: {
+                    codigo: 1,
+                    fecha_inicio: 1,
+                    fecha_fin: 1,
+                    precio: 1,
+                    "infoHabitacion": 1,
+                    "infoHotel": 1,
+                }
+            }
+        ]);
+
+        if (reservas.length === 0) {
+            console.log(`No se encontró una reserva con el código de confirmación ${numeroConfirmacion} en el hotel seleccionado.`);
+            return [];
+        }
+
+        return reservas;
+
+    } catch (error) {
+        console.error('Error al buscar la reserva:', error);
+        return [];
+    }
+}
+
+
+
+
+export async function buscarReservaPorHuesped() {
+    try {
+        const huespedSeleccionado = await seleccionarHuesped();
+        const huesped_id = await obtenerHuespedPorId(huespedSeleccionado);
+
+        const reservas = await Reserva.aggregate([
+            // Filtramos las reservas por el ID del huésped
+            {
+                $match: {
+                    huesped: new mongoose.Types.ObjectId(huesped_id) // Filtro para el huésped específico
+                }
+            },
+            // Primer $lookup: Unir con la colección de habitaciones
+            {
+                $lookup: {
+                    from: 'habitacions', // Nombre de la colección de habitaciones
+                    localField: 'habitacion', // Campo en reservas que hace referencia al _id de la habitación
+                    foreignField: '_id', // Campo en habitaciones que corresponde al _id
+                    as: 'infoHabitacion'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$infoHabitacion', // Descompone el array de habitación para facilitar acceso a datos
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            // Segundo $lookup: Unir con la colección de hoteles
+            {
+                $lookup: {
+                    from: 'hotels', // Nombre de la colección de hoteles
+                    localField: 'infoHabitacion.hotel', // Campo en habitaciones que hace referencia al _id del hotel
+                    foreignField: '_id', // Campo en hoteles que corresponde al _id
+                    as: 'infoHotel'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$infoHotel', // Descompone el array de hoteles
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            // Proyectamos los campos que necesitamos
+            {
+                $project: {
+                    codigo: 1,
+                    fecha_inicio: 1,
+                    fecha_fin: 1,
+                    precio: 1,
+                    "infoHabitacion": 1,
+                    "infoHotel": 1,
+                }
+            }
+        ]);
+
+        return reservas;
+
+    } catch (error) {
+        console.error('Error al buscar reservas por huésped:', error);
+        return [];
+    }
+}
